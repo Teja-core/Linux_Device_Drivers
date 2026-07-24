@@ -1,0 +1,94 @@
+//////////* cross compilation steps for rpi4b *////////////////////////
+
+1)update 
+ sudo apt update
+
+2)install development packages
+sudo apt install git bc bison flex libssl-dev make libc6-dev libncurses5-dev \
+libncursesw5-dev crossbuild-essential-arm64 dwarves \
+gcc-aarch64-linux-gnu
+
+3)check compiler
+aarch64-linux-gnu-gcc --version
+
+4)create a work space
+mkdir ~/rpi_kernel
+cd ~/rpi_kernel
+
+5)clone kernel			//clone your buggy repository...
+git clone <your-github-repo>
+go inside /linux
+cd linux
+
+6)export cross compiler
+export ARCH=arm64
+export CROSS_COMPILE=aarch64-linux-gnu-
+
+7)check  and verify it.
+echo $ARCH			o/p:arm64
+
+8)clean previous build
+make mrproper
+
+
+9)load raspberry pi configuration
+make bcm2711_defconfig			//this creates .config
+
+10)compile kernel
+make -j$(nproc) Image modules dtbs
+
+11)compile modules
+make modules
+
+12)install modules
+create output directory
+ mkdir ~/rpi_modules
+ 
+ install
+make modules_install INSTALL_MOD_PATH=~/rpi_modules
+
+13)check generated files in below paths
+kernel image
+arch/arm64/boot/Image
+device tree
+arch/arm64/boot/Image
+Modules
+~/rpi_modules/lib/modules/
+
+14)Remove SD card from Raspberry pi and insert into PC
+
+15)goto bootfs
+cd /media/$USER/bootfs
+Backup
+sudo cp kernel8.img kernel8_backup.img
+
+16)copy new kernel
+sudo cp ~/rpi_kernel/RPI_4B/linux/arch/arm64/boot/Image kernel8.img
+
+17)Copy DTBs
+sudo cp ~/rpi_kernel/RPI_4B/linux/arch/arm64/boot/dts/broadcom/*.dtb .
+
+18)copy overlays
+sudo cp -r ~/rpi_kernel/linux/arch/arm64/boot/dts/overlays .
+sudo cp -r ~/rpi_kernel/RPI_4B/linux/arch/arm/boot/dts/overlays/* ./overlays/
+
+
+19)copy modules
+goto root partition
+/media/$USER/rootfs
+copy
+sudo cp -r ~/rpi_modules/lib/modules/* \
+/media/$USER/rootfs/lib/modules/
+
+20)sync
+unmount SD
+sudo umount /media/$USER/bootfs
+sudo umount /media/$USER/rootfs
+
+21)insert SD card
+POwer ON
+check kernel 
+uname -a
+22) verify kernel
+
+
